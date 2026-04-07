@@ -35,6 +35,10 @@ Triage, address, and respond to code review comments on GitHub PRs.
 
 **Requires:** [superpowers](https://github.com/obra/superpowers) plugin
 
+## Dependencies
+
+- [jq](https://jqlang.github.io/jq/) — used by the `as-designed-review` Bash intercept hook
+
 ## License
 
 MIT

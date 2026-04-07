@@ -47,7 +47,7 @@ Use Glob to verify both directories exist:
 - `docs/codebase-analysis/as-built/`
 - `docs/codebase-analysis/as-designed/`
 
-If missing, tell the user to run `/analyzing-codebase` first.
+If missing, tell the user to run `/as-designed-review:analyzing-codebase` first.
 
 **Do NOT read any files in these directories.** The diff subagent handles that.
 
