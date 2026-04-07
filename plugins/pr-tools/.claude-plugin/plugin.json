@@ -1,6 +1,6 @@
 {
-  "name": "process-review",
-  "description": "Triage, address, and respond to code review comments on GitHub PRs",
+  "name": "pr-tools",
+  "description": "PR review tools — process review comments and find structural debt",
   "version": "1.0.0",
   "author": {
     "name": "mnbf9rca"

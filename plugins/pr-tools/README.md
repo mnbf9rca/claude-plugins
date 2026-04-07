@@ -1,6 +1,6 @@
-# day-1-review
+# pr-tools
 
-Structural debt analysis for codebases. Finds what wouldn't exist if the code were correct from day 1.
+PR review tools — process review comments and find structural debt.
 
 ## Philosophy
 
@@ -23,9 +23,10 @@ This skill adapts [Riot Games' taxonomy of tech debt](https://www.riotgames.com/
 ## Usage
 
 ```
-/day-1-review:day-1-review          # Analyze current PR
-/day-1-review:day-1-review abc123   # Diff against specific SHA
-/day-1-review:day-1-review --all    # Full repo scan
+/pr-tools:process-review [PR#]       # Triage PR review comments
+/pr-tools:day-1-review              # Analyze current PR for structural debt
+/pr-tools:day-1-review abc123       # Diff against specific SHA
+/pr-tools:day-1-review --all        # Full repo scan
 ```
 
 ## What it finds
