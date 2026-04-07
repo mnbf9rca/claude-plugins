@@ -2,6 +2,14 @@
 # PreToolUse hook: intercept Bash commands that should use dedicated tools
 # This hook is declared in the analyzing-codebase SKILL.md frontmatter
 # and activates automatically during skill execution.
+#
+# Defense-in-depth: allowed-tools in the SKILL.md frontmatter is the primary
+# gate (only ctags and copy-to-as-designed.sh are permitted). This hook is a
+# secondary safety net that catches subagents attempting shell file operations
+# when they should use dedicated tools (Glob, Grep, Read).
+
+# Require jq for JSON parsing
+command -v jq >/dev/null || exit 0
 
 # Read tool input from stdin
 INPUT=$(cat)
@@ -10,13 +18,13 @@ COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
 # Fast-fail: no command means nothing to check
 [ -z "$COMMAND" ] && exit 0
 
-# Allow ctags and cp (the only permitted Bash commands for this skill)
-echo "$COMMAND" | grep -qE '^\s*(ctags|cp)\b' && exit 0
+# Allow ctags (the only permitted Bash command besides the copy script)
+echo "$COMMAND" | grep -qE '^\s*(ctags)\b' && exit 0
 
 # Block file operations that should use dedicated tools
-# Pattern matches command names at word boundaries to avoid false positives
-# (e.g., don't block "catalog" when looking for "cat")
-if echo "$COMMAND" | grep -qE '\b(cat|head|tail|less|more)\b.*[/.]'; then
+# Matches command names at word boundaries, then checks for a non-option argument
+# (any token not starting with "-") within the same pipeline segment
+if echo "$COMMAND" | grep -qE '\b(cat|head|tail|less|more)\b[^|;&<>]*[[:space:]][^-[:space:]]'; then
   echo '{"decision":"deny","reason":"Use the Read tool instead of '"$( echo "$COMMAND" | grep -oE '\b(cat|head|tail|less|more)\b' | head -1)"' for reading files."}'
   exit 0
 fi
