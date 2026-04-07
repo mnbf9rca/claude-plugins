@@ -46,6 +46,16 @@ Analyze code for structural debt — find what wouldn't exist if the codebase we
 **Skills:**
 - `/day-1-review:day-1-review` — Structural debt analysis with dependency graph tracing and Riot Games-inspired taxonomy
 
+## Setup
+
+After cloning, configure git to use the shared hooks:
+
+```
+git config core.hooksPath .githooks
+```
+
+This enables the pre-commit hook that prevents direct commits to `main`.
+
 ## Dependencies
 
 - [universal-ctags](https://github.com/universal-ctags/ctags) — required by `analyzing-codebase` (`brew install universal-ctags`)
