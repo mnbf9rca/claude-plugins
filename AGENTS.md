@@ -2,7 +2,7 @@
 
 ## What this repo is
 
-A Claude Code plugin marketplace. Contains two plugins (`as-designed-review`, `process-review`) distributed as a monorepo. See `docs/specs/2026-04-07-claude-plugins-marketplace-design.md` for the full design.
+A Claude Code plugin marketplace. Contains two plugins (`as-designed-review`, `pr-tools`) distributed as a monorepo. See `docs/specs/2026-04-07-claude-plugins-marketplace-design.md` for the full design.
 
 ## Repo structure
 
