@@ -37,7 +37,9 @@ Triage, address, and respond to code review comments on GitHub PRs.
 
 ## Dependencies
 
+- [universal-ctags](https://github.com/universal-ctags/ctags) — required by `analyzing-codebase` (`brew install universal-ctags`)
 - [jq](https://jqlang.github.io/jq/) — used by the `as-designed-review` Bash intercept hook
+- [gh](https://cli.github.com/) — GitHub CLI, used by `reviewing-analysis` and `process-review`
 
 ## License
 
