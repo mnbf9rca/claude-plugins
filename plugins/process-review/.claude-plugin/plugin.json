@@ -1,0 +1,10 @@
+{
+  "name": "process-review",
+  "description": "Triage, address, and respond to code review comments on GitHub PRs",
+  "version": "1.0.0",
+  "author": {
+    "name": "mnbf9rca"
+  },
+  "repository": "https://github.com/mnbf9rca/claude-plugins",
+  "license": "MIT"
+}
