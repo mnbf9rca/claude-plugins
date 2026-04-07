@@ -18,6 +18,12 @@
       "source": "./plugins/process-review",
       "description": "Triage, address, and respond to code review comments on GitHub PRs",
       "version": "1.0.0"
+    },
+    {
+      "name": "day-1-review",
+      "source": "./plugins/day-1-review",
+      "description": "Analyze code for structural debt — find what wouldn't exist if the codebase were correct from day 1",
+      "version": "1.0.0"
     }
   ]
 }

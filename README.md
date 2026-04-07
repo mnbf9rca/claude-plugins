@@ -35,6 +35,17 @@ Triage, address, and respond to code review comments on GitHub PRs.
 
 **Requires:** [superpowers](https://github.com/obra/superpowers) plugin
 
+### day-1-review
+
+Analyze code for structural debt — find what wouldn't exist if the codebase were correct from day 1.
+
+```
+/plugin install day-1-review@mnbf9rca-plugins
+```
+
+**Skills:**
+- `/day-1-review:day-1-review` — Structural debt analysis with dependency graph tracing and Riot Games-inspired taxonomy
+
 ## Dependencies
 
 - [universal-ctags](https://github.com/universal-ctags/ctags) — required by `analyzing-codebase` (`brew install universal-ctags`)
