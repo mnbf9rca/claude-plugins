@@ -63,6 +63,19 @@ git diff <sha>...HEAD --name-only
 **Full repo mode (`--all`):**
 Use Glob to enumerate all source files. No diff — analyze everything.
 
+### File Exclusions
+
+After resolving scope, filter out files that should not be analyzed:
+
+- **`.claude/`** — local settings and memory, not project code
+- **Files matched by `.gitignore`** — generated artifacts, dependencies, build output
+
+Tell the user what you're excluding and how many files were filtered, e.g.:
+
+> Excluding 3 files: `.claude/settings.local.json` and 2 gitignored files. Analyzing 9 remaining files.
+
+For PR/SHA mode, apply exclusions to the diff file list. For `--all` mode, apply when enumerating source files.
+
 ### Honesty Gate
 
 Before proceeding, estimate scope and be honest about limits:
