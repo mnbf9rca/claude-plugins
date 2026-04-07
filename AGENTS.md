@@ -18,6 +18,10 @@ A Claude Code plugin marketplace. Contains two plugins (`as-designed-review`, `p
 - **Hooks in frontmatter** — declare hooks in SKILL.md frontmatter, not in a plugin-level `hooks.json`. This scopes hooks to skill execution only.
 - **Scripts must be executable** — `chmod +x` any `.sh` files.
 
+## Git workflow
+
+Direct commits to `main` are blocked by a pre-commit hook. Always work on a feature branch and raise a PR. The hook is in `.githooks/` — ensure `git config core.hooksPath .githooks` is set.
+
 ## Adding a new plugin
 
 1. Create `plugins/<name>/.claude-plugin/plugin.json` with name, description, version, author, repository, license.
