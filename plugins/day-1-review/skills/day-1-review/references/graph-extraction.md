@@ -12,10 +12,16 @@ You receive:
 
 ### Step 1: Symbol Index
 
-Run ctags on all in-scope files:
+Run ctags on all in-scope files.
 
+**Full repo mode (`--all`):** Scan recursively from the repo root:
 ```bash
-ctags --output-format=json --fields=+n+r+S+K --extras=+r -R <files>
+ctags --output-format=json --fields=+n+r+S+K --extras=+r -R .
+```
+
+**PR/SHA mode:** Pass the explicit file list (no `-R`):
+```bash
+ctags --output-format=json --fields=+n+r+S+K --extras=+r <file1> <file2> ...
 ```
 
 Parse the output to build a symbol-to-file mapping: what's defined where, what type it is (function, class, variable, constant, etc.).

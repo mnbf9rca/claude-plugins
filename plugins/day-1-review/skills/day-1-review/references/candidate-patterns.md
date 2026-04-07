@@ -76,14 +76,14 @@ Exclude: side-effect imports (CSS imports, polyfills, module augmentation).
 
 ## Pattern: Dead Shim (candidate)
 
-**Signal:** Function with ≤5 callers whose body primarily delegates to another function.
+**Signal:** Function with ≤5 callers whose edge pattern suggests it delegates to another function.
 
 **Detection:**
 1. From the graph, find functions with ≤5 incoming `calls` edges
-2. Read the function body (this is the one case where Phase 2 reads source)
-3. If the body is primarily a call to another function (possibly with argument remapping), flag as candidate
+2. Check outgoing edges: if the function has exactly 1 outgoing `calls` edge (suggesting delegation), flag as candidate
+3. Look for additional graph signals: callers of this function also directly call the delegation target (bypass pattern)
 
-This is a CANDIDATE — Phase 3 confirms whether it's actually a shim worth removing.
+This is a CANDIDATE — Phase 3 confirms pass-through by reading the function body.
 
 **Category:** `dead-shim` | **Type:** MacGyver
 

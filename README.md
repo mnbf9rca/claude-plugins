@@ -58,9 +58,9 @@ This enables the pre-commit hook that prevents direct commits to `main`.
 
 ## Dependencies
 
-- [universal-ctags](https://github.com/universal-ctags/ctags) — required by `analyzing-codebase` (`brew install universal-ctags`)
+- [universal-ctags](https://github.com/universal-ctags/ctags) — required by `analyzing-codebase` and `day-1-review` (`brew install universal-ctags`)
 - [jq](https://jqlang.github.io/jq/) — used by the `as-designed-review` Bash intercept hook
-- [gh](https://cli.github.com/) — GitHub CLI, used by `reviewing-analysis` and `process-review`
+- [gh](https://cli.github.com/) — GitHub CLI, used by `reviewing-analysis`, `process-review`, and `day-1-review`
 
 ## License
 

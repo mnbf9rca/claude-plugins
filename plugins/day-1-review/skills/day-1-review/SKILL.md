@@ -29,7 +29,7 @@ digraph scope {
     "Has SHA arg?" [shape=diamond];
     "Has PR on branch?" [shape=diamond];
     "Scope: full repo" [shape=box];
-    "Scope: diff HEAD..SHA" [shape=box];
+    "Scope: diff <sha>...HEAD" [shape=box];
     "Scope: PR diff" [shape=box];
     "Error: no PR, no SHA" [shape=box];
     "Honesty gate" [shape=box];
@@ -37,12 +37,12 @@ digraph scope {
     "Parse arguments" -> "Has --all?";
     "Has --all?" -> "Scope: full repo" [label="yes"];
     "Has --all?" -> "Has SHA arg?" [label="no"];
-    "Has SHA arg?" -> "Scope: diff HEAD..SHA" [label="yes"];
+    "Has SHA arg?" -> "Scope: diff <sha>...HEAD" [label="yes"];
     "Has SHA arg?" -> "Has PR on branch?" [label="no"];
     "Has PR on branch?" -> "Scope: PR diff" [label="yes"];
     "Has PR on branch?" -> "Error: no PR, no SHA" [label="no"];
     "Scope: full repo" -> "Honesty gate";
-    "Scope: diff HEAD..SHA" -> "Honesty gate";
+    "Scope: diff <sha>...HEAD" -> "Honesty gate";
     "Scope: PR diff" -> "Honesty gate";
 }
 ```
@@ -74,7 +74,7 @@ git diff <base>...<head> --stat
 
 If the scope exceeds what can be meaningfully analyzed:
 - **>200 changed files (PR/SHA mode):** Warn the user. Suggest scoping to specific directories.
-- **>500 files or >100k lines (--all mode):** Warn the user. Suggest passing a directory path instead.
+- **>500 files or >100k lines (--all mode):** Warn the user. Suggest scoping to a specific PR or SHA instead, or manually limiting the set of files analyzed.
 - **Do NOT silently produce shallow results.** Be explicit about what you can and cannot cover.
 
 ## Phase 1: Graph Extraction
@@ -148,7 +148,7 @@ Write all candidates to `.working/candidates.json`.
 
 - **Do not flag bugs.** Bugs (wrong logic, incorrect behavior) are not structural debt. Structural debt is code that works but shouldn't exist. If the code is broken, that's a different tool's job.
 - **Do not flag style issues.** Formatting, indentation, and linting concerns are not structural debt.
-- **Do not read source files.** Use only the graph data and grep results. Save source reading for Phase 3.
+- **Do not perform open-ended source reading or semantic analysis.** Bounded mechanical reads (grep results, checking for docstrings, reading config files like `.gitignore`) are fine. Save in-depth source comprehension for Phase 3.
 
 ## Phase 3: Semantic Evaluation
 
