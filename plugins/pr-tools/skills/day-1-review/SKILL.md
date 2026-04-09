@@ -3,16 +3,11 @@ name: day-1-review
 description: Use when the user wants to find structural debt in a codebase or PR — shims, dead code, hidden defaults, stale docs, naming inconsistencies, orphaned config, and other artifacts of evolution
 argument-hint: "[sha|--all]"
 allowed-tools:
-  - "Bash(git diff *)"
-  - "Bash(git log *)"
-  - "Bash(git rev-parse *)"
-  - "Bash(git ls-files *)"
-  - "Bash(git -C * diff *)"
-  - "Bash(git -C * log *)"
-  - "Bash(git -C * ls-files *)"
-  - "Bash(git -C * rev-parse *)"
+  - "Bash(git *)"
   - "Bash(gh *)"
   - "Bash(ctags *)"
+  - "Bash(wc *)"
+  - "Read(~/.claude/plugins/cache/**)"
 ---
 
 # Day 1 Review
@@ -119,6 +114,16 @@ git -C /path/to/repo ls-files
 # NO — triggers consent prompt
 cd /path/to/repo && git ls-files
 ```
+
+Avoid piped commands where possible — each subcommand in a pipe needs its own permission. Prefer single commands:
+```bash
+# YES — single command, count files from output
+git -C /path ls-files
+# AVOID — pipe requires both git and wc to be allowed
+git -C /path ls-files | wc -l
+```
+
+Never embed multi-line strings containing `#` in bash arguments — Claude Code's security checks flag `\n#` as a potential argument injection.
 
 ### File Exclusions
 
@@ -374,10 +379,19 @@ The orchestrator collects Phase 3 findings, merges with Phase 2 confirmed findin
 
 ### Presentation Format
 
-**Detail section — one block per finding:**
+Write the full detailed report to a file. Present only the summary table on screen.
+
+**Step 1:** Write detailed findings to `docs/day-1-review/YYYY-MM-DD-detailed-report.md`:
 
 ```markdown
-### N. [Short description]
+# Day 1 Review: Detailed Findings
+
+## Subagent Issues & Recommendations
+[Surface any issues/recommendations from subagents here]
+
+## Findings
+
+### 1. [Short description]
 - **File(s):** path/to/file.ts:42 (+ N related files)
 - **Category:** Dead code | Dead shim | Hidden default | ...
 - **Debt type:** Local | MacGyver | Foundational | Data
@@ -387,11 +401,18 @@ The orchestrator collects Phase 3 findings, merges with Phase 2 confirmed findin
 - **Evidence:** [what the graph/agent found — be specific]
 - **Recommendation:** Remove | Inline | Document | Consolidate | Needs your call
 - **What's unknown:** [only for confidence < 4 — what we can't verify]
+
+### 2. ...
+
+## Bugs Found
+[Any bugs discovered during analysis — clearly separated from debt]
 ```
 
-**Summary table at bottom:**
+**Step 2:** Present the summary table on screen:
 
 ```markdown
+Full report: docs/day-1-review/YYYY-MM-DD-detailed-report.md
+
 ## Summary
 
 | # | Category | Location | Description | Type | Imp | Conf | Cont | Rec |
