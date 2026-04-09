@@ -52,14 +52,14 @@ Write `.working/dependency-graph.json` with this structure:
   "scope": {
     "mode": "pr|sha|all",
     "base": "<base ref>",
-    "files_analyzed": <N>,
-    "files_in_graph": <N>
+    "files_analyzed": "<N>",
+    "files_in_graph": "<N>"
   },
   "nodes": [
     {
       "id": "<unique symbol or file identifier>",
       "file": "<path>",
-      "line": <N>,
+      "line": "<N>",
       "type": "function|class|variable|constant|config|import",
       "hop": 0
     }
@@ -74,11 +74,31 @@ Write `.working/dependency-graph.json` with this structure:
 }
 ```
 
+### Step 5: Return Summary
+
+Return a JSON response to the orchestrator with this structure:
+
+```json
+{
+  "summary": {
+    "files_expected": "<N>",
+    "files_processed": "<N>",
+    "skipped": [],
+    "nodes_created": "<N>",
+    "edges_created": "<N>"
+  },
+  "issues": [],
+  "recommendations": []
+}
+```
+
+Report any problems in `issues` (e.g., "ctags not installed — fell back to grep-based tracing, precision may be lower", "3 files exceeded 10k lines, symbol tracing may be incomplete"). Include suggestions in `recommendations` (e.g., "Re-run with --all to catch cross-module dependencies").
+
 ## Rules
 
 - Use Glob to find files, Grep to search content, Read to read files.
 - Bash is ONLY for ctags. No ls, find, cat, or other shell commands.
 - Do NOT assess whether anything is debt. Map structure only.
 - Do NOT read file contents beyond what's needed for import/reference tracing.
-- If ctags is not installed, report this and fall back to grep-based import/reference tracing (less precise but functional).
+- If ctags is not installed, report this in `issues` and fall back to grep-based import/reference tracing (less precise but functional).
 - Write output to `.working/dependency-graph.json` using the Write tool. The `.working/` directory will be created automatically.

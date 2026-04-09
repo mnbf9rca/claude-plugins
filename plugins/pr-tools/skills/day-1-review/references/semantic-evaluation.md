@@ -5,17 +5,16 @@ You are evaluating structural debt candidates identified by mechanical analysis.
 ## Input
 
 You receive:
-1. Candidate list (from Phase 2) with mechanical evidence
-2. Dependency subgraph (JSON) for your component
-3. Source context (hop 0 full, hop 1 relevant sections, hop 2 signatures)
-4. The PR diff (relevant portion)
+1. Candidate list (from Phase 2 groups A, B, and C) with mechanical evidence
+2. File list for your connected component (you read source as needed)
+3. Scope info (PR diff reference, mode)
 
 ## What to Evaluate
 
 ### Candidates from Phase 2
 
 For each candidate:
-1. Read the relevant source code
+1. Read the relevant source code (use Read tool on specific files/line ranges)
 2. Check if the mechanical evidence is correct (are there really 0 callers? is this really a pass-through?)
 3. Apply semantic judgment: is this actually debt, or does it serve a purpose the graph can't see?
 4. Classify on three axes and assign a debt type
@@ -86,28 +85,50 @@ Look specifically for these categories that mechanical analysis cannot detect:
 
 ## Output Format
 
-Return a JSON array of findings:
+Return a JSON response:
 
 ```json
-[
-  {
-    "title": "Short description",
-    "files": ["path:line", "path:line"],
-    "category": "dead-code|dead-shim|hidden-default-magic|hidden-default-implicit|stale-docs|...",
-    "debt_type": "local|macgyver|foundational|data",
-    "impact": 3,
-    "confidence": 5,
-    "contagion": 2,
-    "evidence": "Specific evidence from the code and graph",
-    "recommendation": "remove|inline|document|consolidate|needs-human-call",
-    "unknown": "What we can't verify (only if confidence < 4)"
-  }
-]
+{
+  "summary": {
+    "candidates_received": "<N>",
+    "candidates_confirmed": "<N>",
+    "candidates_rejected": "<N>",
+    "additional_findings": "<N>",
+    "files_read": "<N>"
+  },
+  "issues": [],
+  "recommendations": [],
+  "findings": [
+    {
+      "title": "Short description",
+      "files": ["path:line", "path:line"],
+      "category": "dead-code|dead-shim|hardcoded-credentials|hidden-default-magic|hidden-default-implicit|stale-docs|backwards-compat-shim|...",
+      "debt_type": "local|macgyver|foundational|data",
+      "impact": 3,
+      "confidence": 5,
+      "contagion": 2,
+      "evidence": "Specific evidence from the code and graph",
+      "recommendation": "remove|inline|document|consolidate|needs-human-call",
+      "unknown": "What we can't verify (only if confidence < 4)",
+      "source_candidate_id": "c1 or null if newly discovered"
+    }
+  ],
+  "bugs": [
+    {
+      "title": "Short description of the bug",
+      "files": ["path:line"],
+      "evidence": "What's wrong and why it's a bug, not debt"
+    }
+  ]
+}
 ```
 
 ## Rules
 
-- **Do NOT flag bugs.** Wrong behavior is a bug, not debt. Debt is code that works but shouldn't exist. Mention bugs as an aside if you find them, but exclude from the findings array.
+- **Read source files yourself** using the Read tool. The orchestrator does not provide pre-read source context.
+- Read only what you need — targeted line ranges, not entire files.
+- **Do NOT flag bugs as debt.** Wrong behavior is a bug, not debt. Debt is code that works but shouldn't exist. If you find bugs, return them in a separate `bugs` array (same format as findings but clearly labeled). The orchestrator will present these in a dedicated **Bugs Found** section. Do not mix them into the `findings` array.
 - **Do NOT flag style issues.** Formatting and linting are not debt.
 - **Do NOT invent hypothetical debt.** Every finding needs concrete evidence.
 - **Be honest with scores.** Dead code with zero callers is confidence 5 but impact 1 and contagion 1. Don't inflate.
+- Report problems in `issues` and suggestions in `recommendations`.
