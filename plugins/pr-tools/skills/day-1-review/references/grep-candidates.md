@@ -6,6 +6,8 @@ You are running text pattern queries against source files to identify structural
 
 You receive:
 - A list of in-scope files
+- The scope mode (PR, SHA, or --all)
+- For PR/SHA mode: the base ref (e.g., `main` or a SHA), so you can run `git diff <base>...HEAD` for stale-docs detection
 
 Run each pattern below against these files using Grep and Read.
 
@@ -32,9 +34,9 @@ Exclude: documentation comments, license headers, example code in docstrings.
 
 **Category:** `todo-fixme` | **Type:** Local
 
-### Hardcoded Credentials
+### Hardcoded Credentials (security finding)
 
-**Signal:** Passwords, tokens, secrets, or API keys hardcoded in source files.
+**Signal:** Passwords, tokens, secrets, or API keys hardcoded in source files. This is a security finding, not just structural debt.
 
 **Detection:** Grep for patterns like:
 - `password\s*=\s*"`, `PASSWORD\s+"`, `secret\s*=\s*"`
@@ -43,7 +45,7 @@ Exclude: documentation comments, license headers, example code in docstrings.
 
 Exclude: test fixtures with obviously fake values, environment variable reads.
 
-**Category:** `hidden-default-magic` | **Type:** Foundational
+**Category:** `hardcoded-credentials` | **Type:** Foundational
 
 ### Stale Documentation
 
@@ -131,7 +133,7 @@ Return a JSON response:
       "id": "b1",
       "title": "Short description",
       "files": ["path/to/file.ts:42"],
-      "category": "commented-out-code|todo-fixme|hidden-default-magic|stale-docs|missing-docs|orphaned-docs|undocumented-default",
+      "category": "commented-out-code|todo-fixme|hardcoded-credentials|hidden-default-magic|stale-docs|missing-docs|orphaned-docs|undocumented-default",
       "evidence": "Specific text evidence (the matched line/pattern)",
       "phase3_needed": false
     }

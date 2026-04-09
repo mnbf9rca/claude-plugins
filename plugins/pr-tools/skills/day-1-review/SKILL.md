@@ -3,10 +3,16 @@ name: day-1-review
 description: Use when the user wants to find structural debt in a codebase or PR — shims, dead code, hidden defaults, stale docs, naming inconsistencies, orphaned config, and other artifacts of evolution
 argument-hint: "[sha|--all]"
 allowed-tools:
-  - "Bash(git *)"
-  - "Bash(gh *)"
-  - "Bash(ctags *)"
+  # Orchestrator scope resolution + honesty gate:
+  - "Bash(git diff *)"
+  - "Bash(git log *)"
+  - "Bash(git rev-parse *)"
+  - "Bash(git ls-files *)"
+  - "Bash(gh pr *)"
   - "Bash(wc *)"
+  # Subagent tools (not for orchestrator use — see Orchestrator Rules):
+  - "Bash(ctags *)"
+  # Read reference prompts from plugin cache:
   - "Read(~/.claude/plugins/cache/**)"
 ---
 
@@ -196,7 +202,7 @@ Orchestrator
 
 ## Subagent Output Contract
 
-All subagents return the same top-level structure:
+All subagents return the same top-level structure. Phase 1 (graph extraction) uses `nodes_created` and `edges_created` instead of `patterns_run` and `candidates_found` since it produces a graph, not candidates.
 
 ```json
 {
@@ -268,7 +274,7 @@ Dispatched as three parallel subagent groups, split by input dependency.
 
 **Subagent prompt:** Use `${CLAUDE_PLUGIN_ROOT}/skills/day-1-review/references/grep-candidates.md`
 
-**Input:** File list only. No graph needed.
+**Input:** File list + base ref (for PR/SHA mode, so the subagent can run `git diff` for stale-docs detection). In `--all` mode, pass only the file list — stale-docs will be skipped.
 
 ### Group C: Manifest/Config Patterns
 
@@ -298,6 +304,7 @@ Dispatched as three parallel subagent groups, split by input dependency.
 | 14 | **Hidden defaults (implicit behavior)** | Silent fallbacks, swallowed errors | Phase 3 only |
 | 15 | **Backwards-compat shim** | Wrapper patterns, adapter layers | Phase 3 only |
 | 16 | **Undocumented defaults** | Default values with no doc reference | B (candidate) |
+| 17 | **Hardcoded credentials** | Passwords, tokens, secrets in source (security) | B |
 
 ### What Phase 2 Must NOT Do
 
@@ -314,6 +321,8 @@ Dispatch Opus-model agents to evaluate candidates that Phase 2 couldn't fully re
 ### Dispatch Strategy
 
 Use Group A's `components` output to partition work. Dispatch one Opus agent per connected component.
+
+**If Group A returns zero components** (possible in small codebases or when no graph-dependent candidates are found), dispatch a single Phase 3 agent with all candidates from all groups.
 
 **Routing candidates to components:** All candidates (from all three Phase 2 groups) include a `files` field with paths. Match candidate file paths against each component's file list. Candidates whose files don't appear in any component go to one additional "loose candidates" agent.
 

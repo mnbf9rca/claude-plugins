@@ -102,7 +102,7 @@ Return a JSON response:
     {
       "title": "Short description",
       "files": ["path:line", "path:line"],
-      "category": "dead-code|dead-shim|hidden-default-magic|hidden-default-implicit|stale-docs|backwards-compat-shim|...",
+      "category": "dead-code|dead-shim|hardcoded-credentials|hidden-default-magic|hidden-default-implicit|stale-docs|backwards-compat-shim|...",
       "debt_type": "local|macgyver|foundational|data",
       "impact": 3,
       "confidence": 5,

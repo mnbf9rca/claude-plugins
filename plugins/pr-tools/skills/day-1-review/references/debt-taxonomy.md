@@ -102,3 +102,4 @@ Full list of structural debt categories this skill detects:
 14. **hidden-default-magic** — Hardcoded values with no explanation
 15. **hidden-default-implicit** — Silent fallbacks, swallowed errors, undocumented behavior
 16. **undocumented-default** — Default values that exist but aren't documented
+17. **hardcoded-credentials** — Passwords, tokens, secrets, or API keys in source (security finding)
