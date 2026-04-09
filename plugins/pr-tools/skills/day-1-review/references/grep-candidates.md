@@ -47,14 +47,17 @@ Exclude: test fixtures with obviously fake values, environment variable reads.
 
 ### Stale Documentation
 
-**Signal:** Doc file references symbols that were modified or removed in the diff.
+**Signal:** Doc file references symbols that were modified or removed.
 
-**Detection:**
-1. From the diff (if available), get list of removed/renamed symbols
+**Detection (PR/SHA mode):**
+1. From the diff, get list of removed/renamed symbols
 2. Grep doc files (*.md, *.rst, *.txt, docstrings) for those symbol names
 3. Flag matches — the doc may now be wrong
 
-For `--all` mode without a diff, skip this pattern.
+**Detection (--all mode):**
+This pattern requires a diff to detect docs that reference *changed* symbols. In `--all` mode there is no diff, so this specific check cannot run. However, docs that reference *nonexistent* symbols are caught by the **Orphaned Documentation** pattern below, which runs in all modes.
+
+Report in `patterns_run` as `"stale-docs:skipped-no-diff"` and note in `recommendations`: "Stale-docs detection requires a diff. Run against a specific PR or SHA to detect docs that reference changed (but still existing) symbols."
 
 **Category:** `stale-docs` | **Type:** Local
 

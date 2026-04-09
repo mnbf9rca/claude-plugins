@@ -291,7 +291,7 @@ Dispatched as three parallel subagent groups, split by input dependency.
 | 7 | **Zombie feature flag** | Flag checked but never toggled | A (candidate) |
 | 8 | **Naming inconsistency** | Mixed conventions for same concept | A |
 | 9 | **Spurious includes/imports** | Import with no usage of imported symbols | A |
-| 10 | **Stale documentation** | Doc references symbols modified/removed in diff | B (PR/SHA only) |
+| 10 | **Stale documentation** | Doc references symbols modified/removed in diff | B (PR/SHA only — needs diff; orphaned-docs covers nonexistent refs in --all) |
 | 11 | **Missing documentation** | Public exports with no doc coverage | B |
 | 12 | **Orphaned documentation** | Doc files referencing nonexistent code | B |
 | 13 | **Hidden defaults (magic values)** | Hardcoded literals in function bodies | B (candidate) |
