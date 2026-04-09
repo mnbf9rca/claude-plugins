@@ -32,7 +32,7 @@ PR review tools — process review comments and find structural debt.
 
 **Skills:**
 - `/pr-tools:process-review` — Process PR review comments with categorization and automated responses
-- `/pr-tools:day-1-review` — Structural debt analysis with dependency graph tracing and Riot Games-inspired taxonomy
+- `/pr-tools:day-1-review` — Structural debt analysis with dependency graph tracing and [Riot Games-inspired](https://www.riotgames.com/en/news/taxonomy-tech-debt) taxonomy
 
 **Requires:** [superpowers](https://github.com/obra/superpowers) plugin (for process-review skill)
 
