@@ -47,7 +47,7 @@ Partition the file list by extension and run the chosen indexer for each partiti
   ```
   Output is a JSON array: `[{name, kind, file, line, column, namespace, references: [{file, line}]}, ...]`. Parse it and merge into the symbol-to-file mapping — the `references` array is the authoritative cross-file usage list for Swift symbols at this tier (use it instead of grep when building edges).
   - Pass `--index-wait-seconds` **only** if `swift_tier_wait > 0` (set by the orchestrator when no warm index-store was detected but the user chose to rely on background indexing).
-  - **Error recovery (the only allowed tier change):** If the script exits non-zero, capture the stderr in `issues`, mark the affected files as downgraded from tier 1 to tier 3 (also recorded in `issues`), and re-index those files with tier 3's grep-only rules. Do not silently skip them, and do not try tier 2 as an intermediate step.
+  - **Error recovery (the only allowed downgrade):** If the script exits non-zero, record both the stderr output and the tier-1-to-tier-3 downgrade in `issues`, then re-index the affected files with tier 3's grep-only rules. Do not silently skip them, and do not try tier 2 as an intermediate step.
   - **Note in `issues`:** "Swift indexed with SourceKit-LSP (tier 1) — semantic definitions and cross-file references via `scripts/swift-lsp-index.py`."
 
 - **Tier 2 (`sourcekitten` available):** Run `sourcekitten structure --file <path>` per Swift file. The output is JSON with a recursive `key.substructure` tree; walk it and emit a symbol record for each declaration whose `key.kind` starts with `source.lang.swift.decl.`. Map Swift kinds to the ctags-style schema:
