@@ -1,6 +1,6 @@
 Synthesize module analyses into a feature map.
 
-**Tool rules:** Use Glob to find files, Grep to search content, Read to read files. Bash is ONLY for ctags. No ls/find/cat/awk/wc/du or other shell commands.
+**Tool rules:** Use Glob to find files, Grep to search content, Read to read files. Bash is ONLY for `ctags` and `sourcekitten`. No ls/find/cat/awk/wc/du or other shell commands.
 
 **Context budget:** Read all module analysis files (they're concise). Use Grep for import analysis — do NOT read source files directly.
 

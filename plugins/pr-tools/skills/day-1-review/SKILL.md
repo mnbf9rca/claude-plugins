@@ -10,8 +10,14 @@ allowed-tools:
   - "Bash(git ls-files *)"
   - "Bash(gh pr *)"
   - "Bash(wc *)"
+  # Tool capability detection (orchestrator honesty gate):
+  - "Bash(command -v *)"
+  - "Bash(test *)"
   # Subagent tools (not for orchestrator use — see Orchestrator Rules):
   - "Bash(ctags *)"
+  - "Bash(sourcekitten *)"
+  - "Bash(sourcekit-lsp *)"
+  - "Bash(python3 ${CLAUDE_PLUGIN_ROOT}/skills/day-1-review/scripts/swift-lsp-index.py *)"
   # Read reference prompts from plugin cache:
   - "Read(~/.claude/plugins/cache/**)"
 ---
@@ -46,7 +52,7 @@ digraph orchestrator_role {
 - Read source files (via Read, cat, head, tail, or any other mechanism)
 - Read `.working/dependency-graph.json` or any intermediate data file
 - Run Grep or Glob against the codebase
-- Run ctags
+- Run indexers (`ctags`, `sourcekitten`, `sourcekit-lsp`, the `swift-lsp-index.py` driver) — these belong to the graph subagent. The orchestrator may only run `command -v <indexer>` and `test -d <index-store-path>` during the honesty gate to detect availability.
 - Perform any analysis that belongs to a subagent
 
 **You MUST:**
@@ -147,7 +153,9 @@ For PR/SHA mode, apply exclusions to the diff file list. For `--all` mode, apply
 
 ### Honesty Gate
 
-Before proceeding, estimate scope and be honest about limits:
+Before proceeding, be honest about both scope **and** indexing fidelity.
+
+**Scope check:**
 
 ```bash
 # Count changed files (PR/SHA mode)
@@ -157,7 +165,54 @@ git diff <base>...<head> --stat
 If the scope exceeds what can be meaningfully analyzed:
 - **>200 changed files (PR/SHA mode):** Warn the user. Suggest scoping to specific directories.
 - **>500 files or >100k lines (--all mode):** Warn the user. Suggest scoping to a specific PR or SHA instead, or manually limiting the set of files analyzed.
-- **Do NOT silently produce shallow results.** Be explicit about what you can and cannot cover.
+
+**Indexing capability check:**
+
+Count file extensions in the scoped list. For each language family present, confirm a suitable indexer is available. Non-Swift languages (C/C++/ObjC/JS/TS/Python/Go/Rust/Ruby/Java/etc.) are handled by ctags. Swift has three tiers:
+
+| Swift tier | Indexer | Detection | What it gives | What it needs |
+|------------|---------|-----------|---------------|---------------|
+| **1** (full fidelity) | `sourcekit-lsp` via `scripts/swift-lsp-index.py` | `command -v sourcekit-lsp` **AND** a built index-store exists (`test -d .build/.../index/store` OR `test -d ~/Library/Developer/Xcode/DerivedData/*/Index.noindex/DataStore`) | Definitions + semantic cross-file references; handles actors, property wrappers, expanded macros | A completed `swift build` (or Swift 6.1+ background indexing warmed up) |
+| **2** (definitions only) | `sourcekitten` | `command -v sourcekitten` | Definitions of everything syntactically present; no cross-file reference resolution | Nothing — runs on a bare checkout |
+| **3** (floor) | `grep` | always available | Approximate regex definitions; no refs, no macros, no computed properties | Nothing |
+
+Run detection in priority order — check tier 1 first, fall back. Do not probe at all if the scope has zero `.swift` files.
+
+**Tier 1 detection, precise:**
+1. `command -v sourcekit-lsp` — if missing, skip tier 1.
+2. Check for an index-store directory. Try, in order:
+   - `test -d <workspace>/.build/*/index/store` (SwiftPM with `swift build`)
+   - `test -d <workspace>/.index/store` (custom `-index-store-path`)
+   - DerivedData: look for any `~/Library/Developer/Xcode/DerivedData/*/Index.noindex/DataStore` that ties to this workspace (match by project name heuristically; if unsure, just note that DerivedData *may* contain one).
+3. If `sourcekit-lsp` is present but no index-store found, tier 1 is still possible via Swift 6.1+ background indexing — but it requires a warm-up period. Surface this to the user as a separate choice (see prompt below).
+
+**The driver script:**
+
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/day-1-review/scripts/swift-lsp-index.py \
+  --workspace <repo-root> \
+  --files <swift-file-1> <swift-file-2> ... \
+  --with-references \
+  [--index-wait-seconds 30]    # only needed when relying on background indexing
+```
+
+Outputs JSON to stdout: an array of `{name, kind, file, line, column, namespace, references}` records. The graph-extraction subagent consumes this.
+
+**If any language in scope is stuck below its preferred tier, surface it plainly and let the user choose:**
+
+> Scope: 63 files (42 TypeScript, 18 Swift, 3 ObjC).
+>
+> Indexing capability:
+> - ✓ ctags → covers TypeScript, ObjC
+> - ⚠ sourcekit-lsp found, but no built index-store detected. Options for Swift:
+>   1. I'll build the project first (`swift build` — takes minutes, gives tier 1 with full cross-file references).
+>   2. Let sourcekit-lsp index in the background after init (tier 1, slower first run, may miss refs if indexing isn't complete).
+>   3. Fall back to SourceKitten (tier 2: definitions only, no cross-file references).
+>   4. Grep only (tier 3: approximate).
+>
+> Which?
+
+If tier 1 is fully available (sourcekit-lsp + warm index-store), proceed directly and say so in one line. Do not prompt unnecessarily. **Do NOT silently produce shallow results** — record the chosen Swift tier in Phase 1's `issues` so the final report reflects it.
 
 ## Data Flow
 
@@ -236,10 +291,21 @@ Dispatch a subagent (standard model) to build the dependency graph mechanically.
 
 **Subagent prompt:** Use `${CLAUDE_PLUGIN_ROOT}/skills/day-1-review/references/graph-extraction.md`
 
-**Input:** The file list from scope resolution.
+**Input:** Pass the file list from scope resolution **and** the indexing capability map from the honesty gate, e.g.:
+
+```
+indexing_capability:
+  ctags: true
+  sourcekitten: true
+  sourcekit_lsp: true
+  swift_index_store: /path/to/.build/x86_64-apple-macosx/debug/index/store
+swift_tier: 1          # 1=sourcekit-lsp+index-store, 2=sourcekitten, 3=grep-only
+swift_tier_wait: 0     # seconds to wait for background indexing (tier 1 only, non-zero when no warm index-store)
+workspace_root: /abs/path/to/repo
+```
 
 The subagent:
-1. Runs `ctags` on all in-scope files to build a symbol index (definitions + references)
+1. Partitions the file list by language family and runs the chosen indexer per partition (ctags for non-Swift; at Swift tier 1, invokes `python3 ${CLAUDE_PLUGIN_ROOT}/skills/day-1-review/scripts/swift-lsp-index.py --workspace <root> --files <swift files> --with-references [--index-wait-seconds N]`; at tier 2, `sourcekitten structure` per Swift file; at tier 3, grep-only)
 2. Traces imports/exports across files
 3. Expands two hops outward from changed files (PR/SHA mode only):
    - **Hop 0:** Changed files (full content available)
@@ -250,7 +316,7 @@ The subagent:
 
 For `--all` mode, skip hop expansion — the entire repo is in scope.
 
-**IMPORTANT:** The graph subagent uses only deterministic tools (ctags, Grep, Glob). It does NOT reason about whether something is debt — it maps structure.
+**IMPORTANT:** The graph subagent uses only deterministic tools (ctags, sourcekitten, the SourceKit-LSP driver script, Grep, Glob). It does NOT reason about whether something is debt — it maps structure.
 
 ## Phase 2: Candidate Selection
 

@@ -3,7 +3,7 @@ Analyze the "{feature_name}" feature in this codebase.
 Contributing modules: {module_list}
 Entry points: {entry_points}
 
-**Tool rules:** Use Glob to find files, Grep to search content, Read to read files. Bash is ONLY for ctags. No ls/find/cat/awk/wc/du or other shell commands.
+**Tool rules:** Use Glob to find files, Grep to search content, Read to read files. Bash is ONLY for `ctags` and `sourcekitten`. No ls/find/cat/awk/wc/du or other shell commands.
 
 **Context budget:** Read at most 15-20 source files. Use Grep to trace flows, then Read only files with key logic. For large files, read only relevant sections.
 
