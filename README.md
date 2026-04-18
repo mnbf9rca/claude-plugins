@@ -56,7 +56,7 @@ This enables the pre-commit hook that prevents direct commits to `main`.
 
 Universal-ctags has no native Swift parser. Both skills detect Swift at run time and present a three-tier choice to the user:
 
-- **Tier 1 — SourceKit-LSP + index-store.** Semantic definitions **and** cross-file references (same data Xcode's "Find Call Hierarchy" uses). Requires `sourcekit-lsp` (ships with Xcode / swift.org toolchain) and a warm index-store from a prior `swift build` — or Swift 6.1+ background indexing, which each skill can opt into with an explicit wait. Driven by a bundled helper script (`scripts/swift-lsp-index.py`, invoked via `python3`; macOS ships python3 by default).
+- **Tier 1 — SourceKit-LSP + index-store.** Semantic definitions **and** cross-file references (same data Xcode's "Find Call Hierarchy" uses). Requires `sourcekit-lsp` (ships with Xcode / swift.org toolchain) and a warm index-store from a prior `swift build` — or Swift 6.1+ background indexing, which each skill can opt into with an explicit wait. Driven by a bundled helper script (`scripts/swift-lsp-index.py`, invoked via `python3`; python3 is commonly available on macOS via the Xcode Command Line Tools, the swift.org toolchain, or Homebrew — install it with `brew install python` if it's missing).
 - **Tier 2 — [SourceKitten](https://github.com/jpsim/SourceKitten)** (`brew install sourcekitten`). Syntactic definitions (class, struct, enum, protocol, extension, actor, func, var, typealias) without needing a build. Does not resolve cross-file references — those fall back to grep.
 - **Tier 3 — grep only.** Approximate definitions via regex. Misses computed properties, property wrappers, and macro-generated code. Always available.
 
