@@ -63,8 +63,13 @@ Run this check in order:
    - Config files present in the repo (e.g. `.swiftlint.yml`, `.rubocop.yml`, `eslint.config.*`, `.eslintrc*`, `ruff.toml` or `[tool.ruff]` in `pyproject.toml`, `.flake8`, `.pylintrc`, `biome.json`, `stylelint.config.*`, `.editorconfig`, etc.).
    - Tools invoked by `.pre-commit-config.yaml`, `.github/workflows/*.yml`, `Makefile`, `package.json` scripts, or other CI entry points.
    - Tool availability (e.g. `command -v <tool>`) surfaced by the orchestrator.
-   If no lint/formatter config applies to the file(s) in the finding, skip this check and note that in the finding's `evidence`.
-2. **Read the actual configuration** of each discovered tool. Note which rules are enabled, which are disabled, any project-specific thresholds, and any custom rules. Do not assume defaults — read the file.
+
+   Then confirm the discovered tool actually targets the file(s) in the finding. "A tool exists in this repo" is not the same as "this tool runs on this file." Check path-targeting in both directions:
+   - **Tool-side inclusion/exclusion:** e.g. SwiftLint `included`/`excluded`, Ruff `exclude`/`extend-exclude`/`per-file-ignores`, ESLint `ignorePatterns`/`.eslintignore`, Stylelint `ignoreFiles`, Rubocop `Include`/`Exclude`.
+   - **Invocation-side filtering:** e.g. pre-commit hook `files`/`exclude`, CI workflow path filters, Makefile targets restricted by glob, package.json script arguments.
+
+   If no tool actually runs on the file(s) in this finding, skip this check and note that in the finding's `evidence`.
+2. **Read the actual configuration** of each discovered tool. Note which rules are enabled, which are disabled, any project-specific thresholds, and any custom rules. Do not assume defaults — read the file. **Resolve composed configuration**: many tools layer config through `extends`, `parent_config`/`child_config`, or `extend` (ESLint, Stylelint, SwiftLint, Rubocop, Ruff, etc.). Follow those references as far as they can be resolved locally. If a referenced config is remote or otherwise unavailable, record that gap in `evidence` rather than silently assuming the rule is absent.
 3. **Check how violations are treated.** Read the same CI/pre-commit entry points for flags like `--strict`, `-Werror`, `--max-warnings 0`, `fail_ci_if_error: true`. When violations are hard-gated, warn-level rules behave as error-level.
 4. **Ask: would implementing this recommendation plausibly trip an enabled rule?** Different recommendations expose different risks — merging files can hit size/length rules; inlining can hit complexity rules; renaming can hit naming rules; consolidating branches can hit cyclomatic-complexity rules; removing an abstraction layer can push type/function bodies over their configured limit. Use the change's actual shape, not a generic checklist.
 5. **If a likely conflict exists**, do one of:
