@@ -51,6 +51,28 @@ Look specifically for these categories that mechanical analysis cannot detect:
 - Assumed environment state (globals, singletons, init order)
 - Undocumented invariants the code relies on
 
+## Lint & Formatter Conflict Check
+
+Before finalizing **any** finding, consider whether implementing its recommendation would likely violate a rule that the project's linter or formatter is actually configured to enforce. A finding that forces the developer to add a `// swiftlint:disable` comment, a `# noqa` line, an `eslint-disable` pragma, or a coverage exception is worse than the original "debt."
+
+**Do not speculate about what a linter might say in general** — check what this project has actually configured.
+
+Run this check in order:
+
+1. **Discover which linters/formatters this project actually uses.** Evidence comes from:
+   - Config files present in the repo (e.g. `.swiftlint.yml`, `.rubocop.yml`, `eslint.config.*`, `.eslintrc*`, `ruff.toml` or `[tool.ruff]` in `pyproject.toml`, `.flake8`, `.pylintrc`, `biome.json`, `stylelint.config.*`, `.editorconfig`, etc.).
+   - Tools invoked by `.pre-commit-config.yaml`, `.github/workflows/*.yml`, `Makefile`, `package.json` scripts, or other CI entry points.
+   - Tool availability (e.g. `command -v <tool>`) surfaced by the orchestrator.
+   If no lint/formatter config applies to the file(s) in the finding, skip this check and note that in the finding's `evidence`.
+2. **Read the actual configuration** of each discovered tool. Note which rules are enabled, which are disabled, any project-specific thresholds, and any custom rules. Do not assume defaults — read the file.
+3. **Check how violations are treated.** Read the same CI/pre-commit entry points for flags like `--strict`, `-Werror`, `--max-warnings 0`, `fail_ci_if_error: true`. When violations are hard-gated, warn-level rules behave as error-level.
+4. **Ask: would implementing this recommendation plausibly trip an enabled rule?** Different recommendations expose different risks — merging files can hit size/length rules; inlining can hit complexity rules; renaming can hit naming rules; consolidating branches can hit cyclomatic-complexity rules; removing an abstraction layer can push type/function bodies over their configured limit. Use the change's actual shape, not a generic checklist.
+5. **If a likely conflict exists**, do one of:
+   - **Reframe the finding** with the real cost visible (name the specific rule and why it would trigger).
+   - **Downgrade confidence** by 1 (typically 4 → 3) and add an `unknown` field naming the specific rule whose impact was not fully verified.
+
+If you did not inspect the project's lint/formatter config — because none applies, or discovery was inconclusive — say so explicitly in `evidence` rather than silently assuming the change is safe.
+
 ## Classification
 
 ### Three Axes (1-5)
@@ -131,4 +153,5 @@ Return a JSON response:
 - **Do NOT flag style issues.** Formatting and linting are not debt.
 - **Do NOT invent hypothetical debt.** Every finding needs concrete evidence.
 - **Be honest with scores.** Dead code with zero callers is confidence 5 but impact 1 and contagion 1. Don't inflate.
+- **Run the Lint & Formatter Conflict Check** (see above) on every finding before finalizing confidence. If the project's configured linter or formatter would likely flag the recommended change, reframe the finding or downgrade confidence — do not emit `confidence: 4+` when the rule impact has not been verified against actual project config.
 - Report problems in `issues` and suggestions in `recommendations`.
