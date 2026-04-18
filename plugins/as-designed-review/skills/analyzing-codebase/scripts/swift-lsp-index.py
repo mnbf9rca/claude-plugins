@@ -33,6 +33,8 @@ import time
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
+# Values must match the lowercase strings in LSP_SYMBOL_KIND below;
+# "protocol" is held in reserve for future Swift-aware overrides of kind 11.
 REFERENCEABLE_KINDS = {
     "class", "struct", "enum", "enummember", "interface", "protocol",
     "function", "method", "constructor", "property", "field",
@@ -228,7 +230,7 @@ def main():
         if args.with_references:
             # Build a deduplicated work list: one LSP request per unique
             # (file, line, column) position, filtered to referenceable kinds.
-            seen_positions = {}  # (file, line, col) -> refs list (or None on error)
+            seen_positions = {}  # (file, line, col) -> refs list (or [] on error)
             for record in records:
                 pos = (record["file"], record["line"], record["column"])
                 if record["kind"] not in REFERENCEABLE_KINDS:
