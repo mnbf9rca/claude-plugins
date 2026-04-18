@@ -49,5 +49,13 @@ Produces two specs compatible with `superpowers:writing-plans`:
 
 ## Dependencies
 
-- [universal-ctags](https://github.com/universal-ctags/ctags) (`brew install universal-ctags`)
+- [universal-ctags](https://github.com/universal-ctags/ctags) (`brew install universal-ctags`) — primary symbol indexer for C/C++/ObjC/JS/TS/Python/Go/Rust/Ruby/etc.
 - [gh](https://cli.github.com/) (GitHub CLI, for PR resolution)
+
+### Optional — Swift
+
+Universal-ctags has no Swift parser. If your scope contains `.swift` files, `day-1-review` runs a capability check and asks which tier you want:
+
+- **Tier 1** — SourceKit-LSP + index-store. Semantic cross-file references via a bundled LSP driver (`scripts/swift-lsp-index.py`). Needs `sourcekit-lsp` (comes with Xcode) and a warm index-store from `swift build`, or Swift 6.1+ background indexing.
+- **Tier 2** — [SourceKitten](https://github.com/jpsim/SourceKitten) (`brew install sourcekitten`). Definitions only, no cross-file references, no build required.
+- **Tier 3** — grep only. Last-resort regex scan.

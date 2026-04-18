@@ -11,13 +11,13 @@
       "name": "as-designed-review",
       "source": "./plugins/as-designed-review",
       "description": "Analyze a codebase into as-built documentation, then compare against user-edited as-designed files to identify deviations",
-      "version": "1.0.0"
+      "version": "1.1.0"
     },
     {
       "name": "pr-tools",
       "source": "./plugins/pr-tools",
       "description": "PR review tools — process review comments and find structural debt",
-      "version": "1.1.2"
+      "version": "1.2.0"
     }
   ]
 }

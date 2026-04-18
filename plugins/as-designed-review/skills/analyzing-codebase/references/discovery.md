@@ -1,6 +1,6 @@
 Explore this codebase and produce a structural summary.
 
-**Tool rules:** Use Glob to find files, Grep to search content, Read to read files. Bash is ONLY for ctags. No ls/find/cat/awk/wc/du or other shell commands.
+**Tool rules:** Use Glob to find files, Grep to search content, Read to read files. Bash is ONLY for `ctags` and `sourcekitten`. No ls/find/cat/awk/wc/du or other shell commands.
 
 **Context budget:** Discovery needs breadth, not depth. Do NOT read source code files — only package manifests, READMEs, config files, and index files.
 

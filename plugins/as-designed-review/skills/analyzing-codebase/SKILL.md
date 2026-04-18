@@ -3,6 +3,11 @@ name: analyzing-codebase
 description: Use when the user wants to understand, document, or audit what a codebase does — its features, components, and how they interact
 allowed-tools:
   - "Bash(ctags:*)"
+  - "Bash(sourcekitten *)"
+  - "Bash(sourcekit-lsp *)"
+  - "Bash(command -v *)"
+  - "Bash(test *)"
+  - "Bash(python3 ${CLAUDE_PLUGIN_ROOT}/skills/analyzing-codebase/scripts/swift-lsp-index.py *)"
   - "Bash(bash ${CLAUDE_PLUGIN_ROOT}/skills/analyzing-codebase/scripts/copy-to-as-designed.sh:*)"
 hooks:
   PreToolUse:
@@ -68,13 +73,62 @@ digraph analyze {
 
 ## Phase 0: Tooling Check
 
-Run these as **two separate** Bash calls (not chained):
+This is an **honest capability gate**, not a pass/fail check. The goal is to tell the user what fidelity they're going to get *before* heavy subagents run, and let them install a missing indexer or accept degraded coverage.
+
+### Step 1 — ctags
+
+Run as two separate Bash calls (not chained):
 1. `ctags --version`
-2. If that succeeds, check the output shows "Universal Ctags"
+2. If it succeeds, check the output shows "Universal Ctags"
 
-The Xcode-bundled ctags (`/usr/bin/ctags`) is useless. If missing or wrong version, tell the user: `brew install universal-ctags`
+The Xcode-bundled ctags (`/usr/bin/ctags`) is useless. If missing or wrong version, tell the user: `brew install universal-ctags`. **Do not proceed without universal-ctags.**
 
-**Do not proceed without universal-ctags.**
+### Step 2 — language presence
+
+Run a single Glob for `**/*.swift`. If there are **zero Swift files**, skip to Phase 1.
+
+### Step 3 — Swift indexer capability (only if Swift files are present)
+
+Universal-ctags has no native Swift parser, so ctags alone gives near-zero Swift coverage. Check for each tier in priority order:
+
+**Tier 1 — SourceKit-LSP + index-store (full fidelity, semantic cross-file refs):**
+1. `command -v sourcekit-lsp` — if missing, skip to tier 2.
+2. Check for a warm index-store:
+   - `test -d <repo>/.build/*/index/store` (SwiftPM after `swift build`)
+   - `test -d <repo>/.index/store` (custom `-index-store-path`)
+   - Optionally: Xcode DerivedData path that matches this workspace.
+3. If `sourcekit-lsp` is present but no index-store is warm, tier 1 is still *possible* via Swift 6.1+ background indexing with `--index-wait-seconds N`, but it's slower on first run and may miss refs.
+
+**Tier 2 — SourceKitten (definitions only, no build required):** `command -v sourcekitten`.
+
+**Tier 3 — grep only** (always available, floor).
+
+Tier 1 is driven by the plugin's `scripts/swift-lsp-index.py` helper:
+
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/analyzing-codebase/scripts/swift-lsp-index.py \
+  --workspace <repo-root> \
+  --files <swift-file-1> ... \
+  --with-references \
+  [--index-wait-seconds N]
+```
+
+### Step 4 — present the honest picture
+
+If ctags covers everything and no Swift files are present, say so in one line and proceed. Otherwise prompt the user plainly:
+
+> I found N Swift files in this repo. Universal-ctags does not index Swift. Detected indexing options:
+>
+> - ✓ Tier 1 (SourceKit-LSP + warm `.build/.../index/store`) — full cross-file references, no extra work needed.
+> — OR —
+> - ⚠ Tier 1 possible (sourcekit-lsp present, no warm index-store) — I can either run `swift build` first (minutes, gives full fidelity) or rely on background indexing (slower first run, may miss some refs).
+> — OR —
+> - ✓ Tier 2 (SourceKitten) — Swift definitions only, no cross-file references.
+> - ✗ Tier 3 (grep only) — approximate, misses actors/property wrappers/macros.
+>
+> Which would you like me to use? (1 / 1 with build / 1 with background indexing / 2 / 3 / abort)
+
+Store the chosen tier (plus `swift_tier_wait` seconds for background-indexing case) and pass to every Phase 2a module subagent so they dispatch the right indexer per file.
 
 **Bash intercept hook:** This plugin ships with a PreToolUse hook that blocks subagents from using shell commands (`ls`, `find`, `cat`, `awk`, etc.) when they should use dedicated tools. The hook is declared in this skill's frontmatter and activates automatically during skill execution.
 
@@ -102,6 +156,9 @@ Dispatch **one subagent per module (subagent_type=general-purpose)** in parallel
 - `{module_path}` — the module path from the MODULES list
 - `{module_name}` — the directory name (last path segment)
 - `{tech_stack}` — the TECH_STACK value from Phase 1
+- `{swift_tier}` — `none` if no Swift files in this module, else `1` (SourceKit-LSP driver), `2` (SourceKitten), or `3` (grep-only) from Phase 0's capability gate.
+- `{swift_tier_wait}` — seconds to wait for background indexing (tier 1 with cold index-store); `0` otherwise.
+- `{workspace_root}` — absolute path to the repo root (tier 1 needs it for the LSP driver).
 
 **Mark each task complete** as its subagent returns. Main agent collects ONLY the compact summaries. Do NOT read `.working/modules/*.md`.
 
@@ -164,7 +221,7 @@ The main agent does final assembly (lightweight — subagents already wrote the 
 
 **Do NOT create directories with mkdir.** The Write tool creates parent directories automatically when writing files. Let subagents create directories implicitly by writing their output files.
 
-**Do NOT use Bash for file operations.** No `ls`, `find`, `cat`, `head`, `tail`, `awk`, `wc`, `du`, `sort`, `cut`, `uniq`, `cp`, or any other shell command for reading, searching, or listing files. Use Glob, Grep, and Read tools instead. The ONLY Bash commands allowed are `ctags` and the `copy-to-as-designed.sh` script in Phase 3.
+**Do NOT use Bash for file operations.** No `ls`, `find`, `cat`, `head`, `tail`, `awk`, `wc`, `du`, `sort`, `cut`, `uniq`, `cp`, or any other shell command for reading, searching, or listing files. Use Glob, Grep, and Read tools instead. The only Bash commands allowed are `ctags`, `sourcekitten`, the `swift-lsp-index.py` driver (which wraps `sourcekit-lsp`), `command -v <tool>` and `test -d <path>` (Phase 0 capability detection), and the `copy-to-as-designed.sh` script in Phase 3.
 
 **The main agent MUST follow these rules to stay within context limits:**
 
@@ -198,4 +255,4 @@ If MODULE_COUNT is 0 or 1 from Phase 1, treat the entire repo as a single module
 
 **Skipping the feature map confirmation** — Always pause after the feature map to let the user confirm the grouping. Getting the feature boundaries wrong wastes all of Phase 2b.
 
-**Using Bash for file operations** — NEVER use ls, find, cat, head, tail, awk, du, wc, sort, cut, uniq, cp, or ANY shell command to explore files. Use Glob to find files, Grep to search content, Read to read files. The only allowed Bash commands are ctags and the copy-to-as-designed.sh script.
+**Using Bash for file operations** — NEVER use ls, find, cat, head, tail, awk, du, wc, sort, cut, uniq, cp, or ANY shell command to explore files. Use Glob to find files, Grep to search content, Read to read files. The only allowed Bash commands are ctags, sourcekitten, the `swift-lsp-index.py` driver, `command -v` / `test -d` (Phase 0 only), and the copy-to-as-designed.sh script.
