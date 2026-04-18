@@ -18,10 +18,11 @@ Schema:
         {"file": "...", "line": 42}
       ]}]
 
-Tier 1 of the day-1-review Swift indexing ladder. Requires sourcekit-lsp
-(ships with Xcode / swift.org toolchain) and — for cross-file references —
-a completed background-indexing pass (Swift 6.1+) or a prior `swift build`
-with -index-store-path set.
+Tier 1 Swift indexing helper shared by the claude-plugins review skills
+(pr-tools:day-1-review and as-designed-review:analyzing-codebase). Requires
+sourcekit-lsp (ships with Xcode / swift.org toolchain) and — for cross-file
+references — a completed background-indexing pass (Swift 6.1+) or a prior
+`swift build` with -index-store-path set.
 """
 import argparse
 import json
@@ -30,6 +31,13 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from urllib.parse import unquote, urlparse
+
+REFERENCEABLE_KINDS = {
+    "class", "struct", "enum", "enummember", "interface", "protocol",
+    "function", "method", "constructor", "property", "field",
+    "variable", "constant", "typeparameter",
+}
 
 LSP_SYMBOL_KIND = {
     1: "file", 2: "module", 3: "namespace", 4: "package",
@@ -143,30 +151,48 @@ class LSPClient:
 
 
 def flatten_symbols(symbols, file_path, parent_chain=()):
-    """Flatten hierarchical DocumentSymbol[] into a flat record list."""
+    """Flatten DocumentSymbol[] or SymbolInformation[] into a flat record list."""
     out = []
     for sym in symbols:
         name = sym.get("name", "")
         kind = LSP_SYMBOL_KIND.get(sym.get("kind"), "unknown")
-        loc = sym.get("selectionRange") or sym.get("range") or {}
-        start = loc.get("start", {"line": 0, "character": 0})
-        namespace = ".".join(parent_chain) if parent_chain else None
-        out.append({
-            "name": name,
-            "kind": kind,
-            "file": file_path,
-            "line": start["line"] + 1,
-            "column": start["character"],
-            "namespace": namespace,
-        })
-        for child in sym.get("children", []) or []:
-            out.extend(flatten_symbols([child], file_path, parent_chain + (name,)))
+        if "location" in sym:
+            # SymbolInformation shape — flat, no children.
+            loc_obj = sym["location"]
+            start = loc_obj.get("range", {}).get("start", {"line": 0, "character": 0})
+            raw_uri = loc_obj.get("uri", "")
+            sym_file = uri_to_path(raw_uri) if raw_uri else file_path
+            container = sym.get("containerName") or None
+            out.append({
+                "name": name,
+                "kind": kind,
+                "file": sym_file,
+                "line": start["line"] + 1,
+                "column": start["character"],
+                "namespace": container,
+            })
+        else:
+            # DocumentSymbol shape — hierarchical, may have children.
+            loc = sym.get("selectionRange") or sym.get("range") or {}
+            start = loc.get("start", {"line": 0, "character": 0})
+            namespace = ".".join(parent_chain) if parent_chain else None
+            out.append({
+                "name": name,
+                "kind": kind,
+                "file": file_path,
+                "line": start["line"] + 1,
+                "column": start["character"],
+                "namespace": namespace,
+            })
+            for child in sym.get("children", []) or []:
+                out.extend(flatten_symbols([child], file_path, parent_chain + (name,)))
     return out
 
 
 def uri_to_path(uri):
-    if uri.startswith("file://"):
-        return uri[len("file://"):]
+    parsed = urlparse(uri)
+    if parsed.scheme == "file":
+        return unquote(parsed.path)
     return uri
 
 
@@ -200,19 +226,33 @@ def main():
                 print(f"# documentSymbol failed for {file_path}: {exc}", file=sys.stderr)
 
         if args.with_references:
+            # Build a deduplicated work list: one LSP request per unique
+            # (file, line, column) position, filtered to referenceable kinds.
+            seen_positions = {}  # (file, line, col) -> refs list (or None on error)
             for record in records:
+                pos = (record["file"], record["line"], record["column"])
+                if record["kind"] not in REFERENCEABLE_KINDS:
+                    record["references"] = []
+                    continue
+                if pos in seen_positions:
+                    # Already fetched (or failed) for this position; reuse.
+                    record["references"] = list(seen_positions[pos])
+                    continue
                 try:
                     refs = client.references(record["file"], record["line"] - 1, record["column"])
-                    record["references"] = [
+                    ref_list = [
                         {
                             "file": uri_to_path(r["uri"]),
                             "line": r["range"]["start"]["line"] + 1,
                         }
                         for r in refs
                     ]
+                    seen_positions[pos] = ref_list
+                    record["references"] = ref_list
                 except Exception as exc:
                     print(f"# references failed for {record['name']} @ {record['file']}: {exc}",
                           file=sys.stderr)
+                    seen_positions[pos] = []
                     record["references"] = []
 
         json.dump(records, sys.stdout, indent=2)
