@@ -1,0 +1,11 @@
+{
+  "name": "as-designed-review",
+  "version": "1.1.0",
+  "description": "Analyze a codebase into as-built documentation, then compare against user-edited as-designed files to identify deviations",
+  "author": {
+    "name": "mnbf9rca"
+  },
+  "repository": "https://github.com/mnbf9rca/claude-plugins",
+  "license": "MIT",
+  "skills": "./skills"
+}

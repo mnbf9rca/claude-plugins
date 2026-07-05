@@ -1,0 +1,11 @@
+{
+  "name": "pr-tools",
+  "version": "1.2.1",
+  "description": "PR review tools — process review comments and find structural debt",
+  "author": {
+    "name": "mnbf9rca"
+  },
+  "repository": "https://github.com/mnbf9rca/claude-plugins",
+  "license": "MIT",
+  "skills": "./skills"
+}

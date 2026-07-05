@@ -7,3 +7,17 @@ if [ "$branch" = "main" ]; then
   echo "Create a feature branch first: git checkout -b feature/your-feature"
   exit 1
 fi
+
+# Codex manifests must stay in sync with their canonical Claude manifests.
+# Same --check the CI runs (.github/workflows/codex-manifests.yml).
+repo_root="$(git rev-parse --show-toplevel)"
+if command -v python3 >/dev/null 2>&1; then
+  if ! python3 "$repo_root/scripts/generate_codex_manifests.py" --check; then
+    echo "ERROR: Codex manifests are out of sync. Regenerate and stage them:"
+    echo "  python3 scripts/generate_codex_manifests.py"
+    echo "  git add plugins/*/.codex-plugin/plugin.json"
+    exit 1
+  fi
+else
+  echo "WARNING: python3 not found; skipping Codex manifest sync check."
+fi

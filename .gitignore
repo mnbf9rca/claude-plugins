@@ -1,3 +1,5 @@
 .claude/*.local.*
 docs/plans/
 docs/specs/
+__pycache__/
+*.pyc
