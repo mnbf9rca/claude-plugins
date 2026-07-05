@@ -7,16 +7,19 @@ A Claude Code plugin marketplace. Contains two plugins (`as-designed-review`, `p
 ## Repo structure
 
 - `.claude-plugin/marketplace.json` — marketplace catalog (lists all plugins)
-- `plugins/<name>/.claude-plugin/plugin.json` — per-plugin manifest
-- `plugins/<name>/skills/<skill>/SKILL.md` — skill definitions (Markdown with YAML frontmatter)
+- `plugins/<name>/.claude-plugin/plugin.json` — per-plugin manifest (**canonical**)
+- `plugins/<name>/.codex-plugin/plugin.json` — Codex manifest, **generated** from the Claude one (do not hand-edit)
+- `plugins/<name>/skills/<skill>/SKILL.md` — skill definitions (Markdown with YAML frontmatter); shared verbatim by both ecosystems
 - `plugins/<name>/skills/<skill>/references/` — prompt templates used by subagents
 - `plugins/<name>/skills/<skill>/scripts/` — shell scripts referenced by skills/hooks
+- `scripts/generate_codex_manifests.py` — projects each Claude manifest into its Codex counterpart
 
 ## Key conventions
 
 - **`${CLAUDE_PLUGIN_ROOT}`** — resolves to the plugin's root directory at runtime. Use this for all paths in `allowed-tools`, `hooks`, and skill body. Never use `~/.claude/skills/` or absolute paths.
 - **Hooks in frontmatter** — declare hooks in SKILL.md frontmatter, not in a plugin-level `hooks.json`. This scopes hooks to skill execution only.
 - **Scripts must be executable** — `chmod +x` any `.sh` files.
+- **Codex manifests are generated, never hand-edited** — the `.claude-plugin/plugin.json` is the source of truth. After editing it (name, version, description, author, repository, license), run `python3 scripts/generate_codex_manifests.py` to regenerate the matching `.codex-plugin/plugin.json`, and commit both. CI (`.github/workflows/codex-manifests.yml`) runs `--check` and fails the build on drift. Hooks and `allowed-tools` are Claude-only and are deliberately not ported to Codex.
 
 ## Git workflow
 
@@ -27,7 +30,8 @@ Direct commits to `main` are blocked by a pre-commit hook. Always work on a feat
 1. Create `plugins/<name>/.claude-plugin/plugin.json` with name, description, version, author, repository, license.
 2. Create skills under `plugins/<name>/skills/<skill>/SKILL.md`.
 3. Add the plugin entry to `.claude-plugin/marketplace.json`.
-4. Update `README.md` with install instructions.
+4. Run `python3 scripts/generate_codex_manifests.py` to create `.codex-plugin/plugin.json`.
+5. Update `README.md` with install instructions.
 
 ## Adding a skill to an existing plugin
 
