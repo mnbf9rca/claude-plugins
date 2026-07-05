@@ -53,19 +53,19 @@ def generate(plugins_dir, check=False):
     changed = []
     for claude_manifest in sorted(plugins_dir.glob("*/.claude-plugin/plugin.json")):
         plugin_dir = claude_manifest.parent.parent
-        claude = json.loads(claude_manifest.read_text())
+        claude = json.loads(claude_manifest.read_text(encoding="utf-8"))
         has_skills = (plugin_dir / "skills").is_dir()
         text = render(build_codex_manifest(claude, has_skills))
 
         out_path = plugin_dir / ".codex-plugin" / "plugin.json"
-        current = out_path.read_text() if out_path.exists() else None
+        current = out_path.read_text(encoding="utf-8") if out_path.exists() else None
         if current == text:
             continue
 
         changed.append(out_path)
         if not check:
             out_path.parent.mkdir(parents=True, exist_ok=True)
-            out_path.write_text(text)
+            out_path.write_text(text, encoding="utf-8")
     return changed
 
 

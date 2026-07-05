@@ -1,6 +1,8 @@
 import contextlib
 import io
 import json
+import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -65,7 +67,7 @@ def _make_plugin(plugins_dir, name, manifest, with_skills=False):
     plugin_dir = plugins_dir / name
     claude_dir = plugin_dir / ".claude-plugin"
     claude_dir.mkdir(parents=True)
-    (claude_dir / "plugin.json").write_text(json.dumps(manifest))
+    (claude_dir / "plugin.json").write_text(json.dumps(manifest), encoding="utf-8")
     if with_skills:
         (plugin_dir / "skills" / "demo").mkdir(parents=True)
     return plugin_dir
@@ -92,7 +94,7 @@ class Generate(unittest.TestCase):
         out = self.plugins / "pr-tools" / ".codex-plugin" / "plugin.json"
         self.assertTrue(out.exists())
         self.assertEqual(
-            json.loads(out.read_text()),
+            json.loads(out.read_text(encoding="utf-8")),
             {"name": "pr-tools", "version": "1.0.0", "description": "x", "license": "MIT", "skills": "./skills"},
         )
         self.assertIn(out, written)
@@ -140,6 +142,52 @@ class Cli(unittest.TestCase):
         _run_main([], self.plugins)
 
         self.assertEqual(_run_main(["--check"], self.plugins), 0)
+
+
+class LocaleIndependence(unittest.TestCase):
+    def test_preserves_non_ascii_under_ascii_locale(self):
+        """Generation must not depend on the platform locale encoding.
+
+        Source manifests contain non-ASCII (an em dash). Under a forced-ASCII
+        locale, unencoded read_text()/write_text() would raise or garble it.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            plugins = Path(tmp)
+            plugin_dir = plugins / "demo"
+            (plugin_dir / ".claude-plugin").mkdir(parents=True)
+            (plugin_dir / ".claude-plugin" / "plugin.json").write_bytes(
+                json.dumps(
+                    {"name": "demo", "version": "1.0.0", "description": "dash — here"},
+                    ensure_ascii=False,
+                ).encode("utf-8")
+            )
+
+            scripts_dir = Path(gen.__file__).resolve().parent
+            env = {
+                **os.environ,
+                "PYTHONPATH": str(scripts_dir),
+                "PYTHONUTF8": "0",
+                "PYTHONCOERCECLC_LOCALE": "0",
+                "PYTHONCOERCELOCALE": "0",
+                "LC_ALL": "C",
+                "LANG": "C",
+            }
+            proc = subprocess.run(
+                [
+                    sys.executable,
+                    "-c",
+                    "import sys, generate_codex_manifests as g; "
+                    "g.generate(sys.argv[1], check=False)",
+                    str(plugins),
+                ],
+                env=env,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            out = plugin_dir / ".codex-plugin" / "plugin.json"
+            self.assertIn("—", out.read_text(encoding="utf-8"))
 
 
 class Render(unittest.TestCase):
