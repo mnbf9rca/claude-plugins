@@ -54,6 +54,20 @@ PR review tools — process review comments and find structural debt.
 
 **Requires:** [superpowers](https://github.com/obra/superpowers) plugin (for process-review skill)
 
+### writing-tools
+
+Write clear, effective prose based on the Google developer documentation style guide.
+
+```
+/plugin install writing-tools@mnbf9rca-plugins
+```
+
+**Skills:**
+- `/writing-tools:writing-clearly` — Use when writing or editing prose that a person will read: documentation, READMEs, guides, tutorials, release notes, error messages, UI text, code comments, or long-form explanations
+- `/writing-tools:communicating-clearly` — Use when replying to a person in conversation: status updates, plan summaries, explanations, or findings. It keeps your replies free of coined shorthand, compressed notation, and theatrics, written for a reader who didn't watch the process.
+
+The rules are derived from the [Google developer documentation style guide](https://developers.google.com/style) (CC BY 4.0). A PostToolUse hook lints your Markdown prose for style violations as you write or edit it.
+
 ## Setup for editing
 
 After cloning, configure git to use the shared hooks:
