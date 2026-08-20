@@ -25,14 +25,12 @@ def main() -> int:
     except OSError:
         return 0
 
-    # Strip YAML frontmatter, fenced code blocks, and inline code so only
-    # prose is linted. Replace with blank lines to preserve line numbers.
+    # Strip YAML frontmatter (keep fenced code blocks and inline code for
+    # per-line processing). Replace with blank lines to preserve line numbers.
     def blank(match: re.Match) -> str:
         return "\n" * match.group(0).count("\n")
 
     text = re.sub(r"\A---\n.*?\n---\n", blank, text, count=1, flags=re.DOTALL)
-    text = re.sub(r"```.*?```", blank, text, flags=re.DOTALL)
-    text = re.sub(r"`[^`\n]*`", "", text)
 
     checks = [
         (r"\bwhite[- ]?list", 'use "allowlist" instead of "whitelist"'),
@@ -56,12 +54,49 @@ def main() -> int:
     ]
 
     findings = []
+    in_fence = False
+    fence_marker = None  # Track fence type: "```" or "~~~"
+
     for lineno, line in enumerate(text.splitlines(), start=1):
-        # Skip block quotes: often quoted material, not authored prose.
-        if line.lstrip().startswith(">"):
+        lstripped = line.lstrip()
+
+        # Check for fence markers (``` or ~~~). A marker toggles fence state;
+        # only matching marker type closes a fence (per CommonMark).
+        if lstripped.startswith("```"):
+            if in_fence and fence_marker == "```":
+                in_fence = False
+                fence_marker = None
+            elif not in_fence:
+                in_fence = True
+                fence_marker = "```"
+            continue  # Skip fence line itself
+
+        if lstripped.startswith("~~~"):
+            if in_fence and fence_marker == "~~~":
+                in_fence = False
+                fence_marker = None
+            elif not in_fence:
+                in_fence = True
+                fence_marker = "~~~"
+            continue  # Skip fence line itself
+
+        # Skip lines inside fences (including unclosed fences at end of file)
+        if in_fence:
             continue
+
+        # Skip indented code blocks (4+ spaces or a tab)
+        if line.startswith("    ") or line.startswith("\t"):
+            continue
+
+        # Skip block quotes: often quoted material, not authored prose.
+        if lstripped.startswith(">"):
+            continue
+
+        # Strip inline code from this line before checking
+        line_for_checking = re.sub(r"`[^`\n]*`", "", line)
+
         for pattern, advice in checks:
-            if re.search(pattern, line, flags=re.IGNORECASE):
+            if re.search(pattern, line_for_checking, flags=re.IGNORECASE):
                 findings.append(f"  line {lineno}: {advice}")
 
     if not findings:
