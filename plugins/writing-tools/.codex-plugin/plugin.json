@@ -1,6 +1,6 @@
 {
   "name": "writing-tools",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Teach Claude to write clear, effective prose based on the Google developer documentation style guide",
   "author": {
     "name": "mnbf9rca"
