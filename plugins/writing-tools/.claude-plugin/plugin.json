@@ -1,0 +1,10 @@
+{
+  "name": "writing-tools",
+  "description": "Teach Claude to write clear, effective prose based on the Google developer documentation style guide",
+  "version": "1.0.0",
+  "author": {
+    "name": "mnbf9rca"
+  },
+  "repository": "https://github.com/mnbf9rca/claude-plugins",
+  "license": "MIT"
+}

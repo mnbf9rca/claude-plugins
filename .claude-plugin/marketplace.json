@@ -18,6 +18,12 @@
       "source": "./plugins/pr-tools",
       "description": "PR review tools — process review comments and find structural debt",
       "version": "1.2.1"
+    },
+    {
+      "name": "writing-tools",
+      "source": "./plugins/writing-tools",
+      "description": "Teach Claude to write clear, effective prose based on the Google developer documentation style guide",
+      "version": "1.0.0"
     }
   ]
 }
