@@ -60,33 +60,29 @@ def main() -> int:
     for lineno, line in enumerate(text.splitlines(), start=1):
         lstripped = line.lstrip()
 
-        # Check for fence markers (``` or ~~~). A marker toggles fence state;
-        # only matching marker type closes a fence (per CommonMark).
-        if lstripped.startswith("```"):
-            if in_fence and fence_marker == "```":
+        # If in a fence, check whether this line closes it.
+        if in_fence:
+            if lstripped.startswith(fence_marker):
                 in_fence = False
                 fence_marker = None
-            elif not in_fence:
-                in_fence = True
-                fence_marker = "```"
+            continue  # Skip all lines inside fences (including the closing line)
+
+        # Skip indented code blocks (4+ spaces or a tab).
+        # Indented lines can never open a fence.
+        if line.startswith("    ") or line.startswith("\t"):
+            continue
+
+        # Check for fence markers (``` or ~~~) to open a fence.
+        # Only matching marker type closes a fence (per CommonMark).
+        if lstripped.startswith("```"):
+            in_fence = True
+            fence_marker = "```"
             continue  # Skip fence line itself
 
         if lstripped.startswith("~~~"):
-            if in_fence and fence_marker == "~~~":
-                in_fence = False
-                fence_marker = None
-            elif not in_fence:
-                in_fence = True
-                fence_marker = "~~~"
+            in_fence = True
+            fence_marker = "~~~"
             continue  # Skip fence line itself
-
-        # Skip lines inside fences (including unclosed fences at end of file)
-        if in_fence:
-            continue
-
-        # Skip indented code blocks (4+ spaces or a tab)
-        if line.startswith("    ") or line.startswith("\t"):
-            continue
 
         # Skip block quotes: often quoted material, not authored prose.
         if lstripped.startswith(">"):
