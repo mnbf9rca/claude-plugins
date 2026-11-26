@@ -57,9 +57,12 @@ Use the least capable model that can do the job. Most tasks do not need the top 
 |---|---|
 | Searches, test runs, bulk or mechanical edits, a task whose plan already contains the code | Small and cheap |
 | Multi-file implementation, debugging, task reviews, re-reviews of a fix diff | Mid-tier |
-| Specification and plan review, whole-branch review, a subtle or high-risk diff, an escalation ruling | Most capable |
+| Specification and plan review, whole-branch review, a subtle or high-risk diff, an escalation ruling | Strong, one tier below the top |
 
-This applies to every subagent, headless run and helper session a seat starts.
+For Claude models those three sizes are Haiku, Sonnet and Opus. The reviewer seat runs on the strong tier, not on the top model.
+Use the top model only where the project's instructions assign it, or for work a strong model has already failed at.
+
+This applies to every seat, and to every subagent, headless run and helper session a seat starts.
 **Always name the model when you start one.** An omitted model inherits your session's model, which is usually the most expensive.
 
 superpowers:subagent-driven-development has the full guidance under Model Selection.
@@ -84,7 +87,7 @@ Escalate whatever is still open at a limit.
 
 Look for these in the project's instructions before you start:
 
-- Which agent or harness fills each seat.
+- Which agent or harness fills each seat, and which model each seat runs on.
 - How each seat gets its worktree and its access, and any start-up check to run.
 - What only the operator can do, such as a browser sign-in or approving publication.
 - What counts as documentation-only work, which skips the brief and the reviewer round.
