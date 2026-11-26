@@ -49,6 +49,21 @@ Review: /abs/.superpowers/sdd/<plan>/review-task3.md; verdict: CLEAN
 The recipient gets everything else by opening the file. Test results, caveats, what to look at hardest and what you want back all go in the report file. If it is not in a file yet, write the file first.
 Use absolute paths: the main checkout and a worktree can hold different files at the same relative path.
 
+## Size the model to the task
+
+Use the least capable model that can do the job. Most tasks do not need the top model.
+
+| Work | Model |
+|---|---|
+| Searches, test runs, bulk or mechanical edits, a task whose plan already contains the code | Small and cheap |
+| Multi-file implementation, debugging, task reviews, re-reviews of a fix diff | Mid-tier |
+| Specification and plan review, whole-branch review, a subtle or high-risk diff, an escalation ruling | Most capable |
+
+This applies to every subagent, headless run and helper session a seat starts.
+**Always name the model when you start one.** An omitted model inherits your session's model, which is usually the most expensive.
+
+superpowers:subagent-driven-development has the full guidance under Model Selection.
+
 ## Limits
 
 These are defaults. The project's instructions may change them.
@@ -82,5 +97,6 @@ Stop if you catch yourself doing any of these:
 - Prompting another seat about work the operator has not agreed.
 - Writing "otherwise I will proceed" to the operator.
 - Composing a message to another seat that is longer than one line.
+- Starting a subagent or a headless run without naming its model.
 - Opening a diff, a review file or another agent's pane as chief of staff.
 - Passing a finding, a fix or a ruling from one seat to another by hand.

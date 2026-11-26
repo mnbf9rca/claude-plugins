@@ -6,7 +6,7 @@ Part of agent-teams:working-in-agent-teams. Read this when you are the seat that
 
 - You are independent. Read the brief, the specification and the plan yourself, and judge the work against them, not against the builder's summary.
 - You verify read-only. Any access you hold to live systems is for checking. It does not authorize a change.
-- Run on the most capable model available, at high effort.
+- Match the model to the review. Use the most capable model at high effort for a specification, a plan, a whole branch or a subtle, high-risk diff. A small mechanical diff or a scoped re-review takes a mid-tier model.
 
 ## Answering a review request
 
