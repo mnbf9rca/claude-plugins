@@ -68,6 +68,21 @@ Write clear, effective prose based on the Google developer documentation style g
 
 The rules are derived from the [Google developer documentation style guide](https://developers.google.com/style) (CC BY 4.0). A PostToolUse hook lints your Markdown prose for style violations as you write or edit it.
 
+### agent-teams
+
+Run three long-lived agent sessions as a team: a chief of staff that talks to you, a builder and a reviewer. The seats hand work over by file path, and the chief of staff dispatches nothing until you agree the brief.
+
+```
+/plugin install agent-teams@mnbf9rca-plugins
+```
+
+**Skills:**
+- `/agent-teams:working-in-agent-teams` — Use when work is split across separate coding-agent sessions, such as Herdr tabs or panes, acting as chief of staff, builder and reviewer.
+
+**Requires:** the [superpowers](https://github.com/obra/superpowers) plugin, for the plan workspace, the progress ledger and the review labels, and [Herdr](https://github.com/herdrdev/herdr) with its skill, for the commands that reach the other sessions. Install both in every harness that fills a seat.
+
+Your project's own instructions supply the local detail: which agent fills each seat, how a seat gets its worktree and access, what only you can do, and what counts as documentation-only work.
+
 ## Setup for editing
 
 After cloning, configure git to use the shared hooks:
