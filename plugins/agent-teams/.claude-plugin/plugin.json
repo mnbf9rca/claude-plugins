@@ -1,0 +1,10 @@
+{
+  "name": "agent-teams",
+  "description": "Run a chief of staff, a builder and a reviewer as separate agent sessions that hand work over by file path",
+  "version": "1.0.0",
+  "author": {
+    "name": "mnbf9rca"
+  },
+  "repository": "https://github.com/mnbf9rca/claude-plugins",
+  "license": "MIT"
+}
